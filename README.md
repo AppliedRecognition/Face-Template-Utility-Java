@@ -1,4 +1,4 @@
-![Maven metadata URL](https://img.shields.io/maven-metadata/v?metadataUrl=https%3A%2F%2Fdev.ver-id.com%2Fartifactory%2Fgradle-release%2Fcom%2Fappliedrec%2Fverid%2Fface-template-utility%2Fmaven-metadata.xml)
+![Maven metadata URL](https://img.shields.io/maven-metadata/v?metadataUrl=https%3A%2F%2Fdev.ver-id.com%2Fartifactory%2Fgradle-release%2Fcom%2Fappliedrec%2Fverid%2Fface-template-utility%2Fmaven-metadata.xml) ![CI](https://github.com/AppliedRecognition/Face-Template-Utility-Java/workflows/CI/badge.svg?event=push)
 
 # Face Template Utility
 
