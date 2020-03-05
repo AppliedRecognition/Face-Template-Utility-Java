@@ -1,0 +1,77 @@
+apply plugin: 'com.android.library'
+apply plugin: 'maven-publish'
+apply plugin: 'com.jfrog.artifactory'
+
+def getArtifactId = { ->
+    return "face-template-utility"
+}
+
+android {
+    compileSdkVersion 29
+    buildToolsVersion "29.0.2"
+
+    defaultConfig {
+        minSdkVersion 14
+        targetSdkVersion 29
+        versionCode rootProject.generateVersionCode()
+        versionName rootProject.generateVersionName()
+        archivesBaseName = getArtifactId()
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
+        }
+    }
+
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation "commons-codec:commons-codec:${rootProject.commonsCodecVersion}"
+    testImplementation 'junit:junit:4.13'
+    testImplementation "commons-codec:commons-codec:${rootProject.commonsCodecVersion}"
+}
+
+artifactory {
+    contextUrl = verid_artifactory_url
+    //The base Artifactory URL if not overridden by the publisher/resolver
+    publish {
+        repository {
+            repoKey = verid_artifactory_repo
+            username = verid_artifactory_username
+            password = verid_artifactory_password
+            maven = true
+        }
+        defaults {
+            publications('facetemplateutility')
+            publishArtifacts = true
+        }
+    }
+}
+
+artifactoryPublish.dependsOn(":facetemplateutility:assembleRelease")
+
+publishing {
+    publications {
+        facetemplateutility(MavenPublication) {
+            groupId "com.appliedrec.verid"
+            version rootProject.generateVersionName()
+            artifactId getArtifactId()
+            artifact("$buildDir/outputs/aar/${getArtifactId()}-release.aar") {
+                extension "aar"
+            }
+            pom.withXml {
+                def dependenciesNode = asNode().appendNode('dependencies')
+                def commonsCodecNode = dependenciesNode.appendNode('dependency')
+                commonsCodecNode.appendNode('groupId', 'androidx.appcompat')
+                commonsCodecNode.appendNode('artifactId', 'appcompat')
+                commonsCodecNode.appendNode('version', rootProject.commonsCodecVersion)
+            }
+        }
+    }
+}
+

@@ -1,0 +1,50 @@
+// Top-level build file where you can add configuration options common to all sub-projects/modules.
+
+buildscript {
+    
+    repositories {
+        google()
+        jcenter()
+        
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:3.6.1'
+        classpath "org.jfrog.buildinfo:build-info-extractor-gradle:4.9.6"
+    }
+}
+
+allprojects {
+    repositories {
+        google()
+        jcenter()
+        maven {
+            url "https://mvnrepository.com/artifact/commons-codec/commons-codec"
+        }
+    }
+}
+
+ext {
+    versionMajor = 1
+    versionMinor = 0
+    versionPatch = 0
+    versionClassifier = null
+    versionClassifierVersion = ""
+    minSdkVersion = 14
+    commonsCodecVersion = "[1.10,2["
+}
+
+Integer generateVersionCode() {
+    return ext.minSdkVersion * 10000000 + ext.versionMajor * 10000 + ext.versionMinor * 100 + ext.versionPatch
+}
+
+String generateVersionName() {
+    String versionName = "${ext.versionMajor}.${ext.versionMinor}.${ext.versionPatch}"
+    if (ext.versionClassifier != null) {
+        versionName += "-" + ext.versionClassifier + ".${ext.versionClassifierVersion}"
+    }
+    return versionName;
+}
+
+task clean(type: Delete) {
+    delete rootProject.buildDir
+}
