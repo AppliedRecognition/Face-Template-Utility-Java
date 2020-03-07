@@ -67,8 +67,8 @@ publishing {
             pom.withXml {
                 def dependenciesNode = asNode().appendNode('dependencies')
                 def commonsCodecNode = dependenciesNode.appendNode('dependency')
-                commonsCodecNode.appendNode('groupId', 'androidx.appcompat')
-                commonsCodecNode.appendNode('artifactId', 'appcompat')
+                commonsCodecNode.appendNode('groupId', 'commons-codec')
+                commonsCodecNode.appendNode('artifactId', 'commons-codec')
                 commonsCodecNode.appendNode('version', rootProject.commonsCodecVersion)
             }
         }
