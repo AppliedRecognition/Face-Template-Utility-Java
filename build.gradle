@@ -20,6 +20,7 @@ allprojects {
         maven {
             url "https://mvnrepository.com/artifact/commons-codec/commons-codec"
         }
+
     }
 }
 

@@ -20,7 +20,7 @@ repositories {
 }
 
 dependencies {
-    implementation "com.appliedrec.verid:face-template-utility:1.0.0"
+    implementation "com.appliedrec.verid:face-template-utility:2.0.0"
 }
 ~~~
 
@@ -55,12 +55,12 @@ If you're going to be storing raw face templates you may want to convert them to
 1. Convert face template to string:
 
     ~~~java
-    String string = FaceTemplateUtility.stringFromFaceTemplate(template);
+    String string = FaceTemplateUtility.defaultInstance().stringFromFaceTemplate(template);
     ~~~
 2. Convert string to face template:
 
     ~~~java
-    float[] faceTemplate = FaceTemplateUtility.faceTemplateFromString(string);
+    float[] faceTemplate = FaceTemplateUtility.defaultInstance().faceTemplateFromString(string);
     ~~~
     
 ## Comparing face templates
@@ -68,9 +68,37 @@ If you're going to be storing raw face templates you may want to convert them to
 ~~~java
 bool areFaceTemplatesSimilar(float[] template1, float[] template2) {
     float threshold = 4.0f;
-    float score = FaceTemplateUtility.compareFaceTemplates(template1, template2);
+    float score = FaceTemplateUtility.defaultInstance().compareFaceTemplates(template1, template2);
     return score > threshold;
 }
+~~~
+
+## Custom base 64 encoding and decoding
+The library uses Apache Commons Codec for base 64. To use other implementation implement the `IBase64` interface and pass it to the `FaceTemplateUtility.withBase64(IBase64)` factory constructor:
+
+~~~java
+import android.util.Base64;
+
+class AndroidBase64 implements IBase64 {
+    @Override
+    public byte[] decode(String string) {
+        return Base64.decode(string, Base64.DEFAULT);
+    }
+    
+    @Override
+    public String encode(byte[] bytes) {
+        //noinspection CharsetObjectCanBeUsed
+        return Base64.encodeToString(bytes, Base64.NO_WRAP);
+    }
+}
+~~~
+
+~~~java
+FaceTemplateUtility faceTemplateUtility = FaceTemplateUtility.withBase64(new AndroidBase64());
+
+// Or the equivalent:
+
+FaceTemplateUtility faceTemplateUtility = FaceTemplateUtility.defaultInstance().setBase64(new AndroidBase64());
 ~~~
 
 ## [Reference documentation](https://appliedrecognition.github.io/Face-Template-Utility-Java)
