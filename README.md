@@ -20,7 +20,7 @@ repositories {
 }
 
 dependencies {
-    implementation "com.appliedrec.verid:face-template-utility:2.0.0"
+    implementation "com.appliedrec.verid:face-template-utility:2.1.0"
 }
 ~~~
 
@@ -55,12 +55,23 @@ If you're going to be storing raw face templates you may want to convert them to
 1. Convert face template to string:
 
     ~~~java
-    String string = FaceTemplateUtility.defaultInstance().stringFromFaceTemplate(template);
+    float[] template; // Face template
+    FaceTemplateBase64Coder coder = new FaceTemplateBase64Coder();
+    String string = coder.encodeFaceTemplate(template);
     ~~~
+
 2. Convert string to face template:
 
     ~~~java
-    float[] faceTemplate = FaceTemplateUtility.defaultInstance().faceTemplateFromString(string);
+    String templateString; // Face template encoded to string
+    FaceTemplateBase64Coder coder = new FaceTemplateBase64Coder();
+    float[] faceTemplate = coder.decodeFaceTemplate(templateString);
+    ~~~
+    
+3. Note that as of version 2.1.0 you can use encoded templates in comparisons. Simply construct an instance of FaceTemplateUtility with a coder of your choice. For example, to use templates that are encoded to base 64 strings use:
+
+    ~~~java
+    FaceTemplateUtility<String> faceTemplateUtility = FaceTemplateUtility.withCoder(new FaceTemplateBase64Coder());
     ~~~
     
 ## Comparing face templates
@@ -73,32 +84,41 @@ bool areFaceTemplatesSimilar(float[] template1, float[] template2) {
 }
 ~~~
 
-## Custom base 64 encoding and decoding
-The library uses Apache Commons Codec for base 64. To use other implementation implement the `IBase64` interface and pass it to the `FaceTemplateUtility.withBase64(IBase64)` factory constructor:
+## Custom face template encoding and decoding
+The library contains encoders and decoders for converting face templates from/to `String` (`FaceTemplateBase64Coder`) and `byte[]` (`FaceTemplateByteArrayCoder`). You can write your own encoder and supply it to the `FaceTemplateUtility.withCoder(FaceTemplateCoder)` factory constructor.
+
+Here is an example of a coder that encodes the face template to JSON:
 
 ~~~java
-import android.util.Base64;
+public class FaceTemplateJsonCoder implements FaceTemplateCoder<String> {
 
-class AndroidBase64 implements IBase64 {
+    private Gson gson = new Gson();
+
     @Override
-    public byte[] decode(String string) {
-        return Base64.decode(string, Base64.DEFAULT);
+    public String encodeFaceTemplate(float[] faceTemplate) {
+        return gson.toJson(faceTemplate);
     }
-    
+
     @Override
-    public String encode(byte[] bytes) {
-        //noinspection CharsetObjectCanBeUsed
-        return Base64.encodeToString(bytes, Base64.NO_WRAP);
+    public float[] decodeFaceTemplate(String encodedFaceTemplate) {
+        return gson.fromJson(encodedFaceTemplate, float[].class);
     }
 }
 ~~~
 
+Pass the coder to the `FaceTemplateUtility.withCoder(FaceTemplateCoder)` factory constructor:
+
 ~~~java
-FaceTemplateUtility faceTemplateUtility = FaceTemplateUtility.withBase64(new AndroidBase64());
+FaceTemplateUtility<String> faceTemplateUtility = FaceTemplateUtility.withCoder(new FaceTemplateJsonCoder());
+~~~
 
-// Or the equivalent:
+You can then pass your JSON-encoded templates to the utility's `compareFaceTemplates` function:
 
-FaceTemplateUtility faceTemplateUtility = FaceTemplateUtility.defaultInstance().setBase64(new AndroidBase64());
+~~~java
+String jsonTemplate1; // JSON-encoded face template
+String jsonTemplate2; // JSON-encoded face template
+
+float score = faceTemplateUtility.compareFaceTemplates(jsonTemplate1, jsonTemplate2);
 ~~~
 
 ## [Reference documentation](https://appliedrecognition.github.io/Face-Template-Utility-Java)

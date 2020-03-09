@@ -12,6 +12,7 @@ import static org.junit.Assert.assertTrue;
  *
  * @see <a href="http://d.android.com/tools/testing">Testing documentation</a>
  */
+//@SuppressWarnings({"unchecked", "deprecated"})
 public class FaceTemplateUtilityTest {
 
     private TestFaceTemplate[][] testFaceTemplates = {
@@ -29,7 +30,7 @@ public class FaceTemplateUtilityTest {
 
     @Test
     public void test_convertStringToFaceTemplate_succeeds() {
-        FaceTemplateUtility faceTemplateUtility = FaceTemplateUtility.defaultInstance();
+        FaceTemplateUtility<float[]> faceTemplateUtility = FaceTemplateUtility.defaultInstance();
         for (TestFaceTemplate[] testFaceTemplate : testFaceTemplates) {
             for (TestFaceTemplate faceTemplate : testFaceTemplate) {
                 float[] template = faceTemplateUtility.faceTemplateFromString(faceTemplate.getString());
@@ -39,11 +40,33 @@ public class FaceTemplateUtilityTest {
     }
 
     @Test
+    public void test_decodeFaceTemplateFromString_succeeds() {
+        FaceTemplateBase64Coder coder = new FaceTemplateBase64Coder();
+        for (TestFaceTemplate[] testFaceTemplate : testFaceTemplates) {
+            for (TestFaceTemplate faceTemplate : testFaceTemplate) {
+                float[] template = coder.decodeFaceTemplate(faceTemplate.getString());
+                assertArrayEquals(template, faceTemplate.getFaceTemplate(), 0.0001f);
+            }
+        }
+    }
+
+    @Test
     public void test_convertFaceTemplateToString_succeeds() {
-        FaceTemplateUtility faceTemplateUtility = FaceTemplateUtility.defaultInstance();
+        FaceTemplateUtility<float[]> faceTemplateUtility = FaceTemplateUtility.defaultInstance();
         for (TestFaceTemplate[] testFaceTemplate : testFaceTemplates) {
             for (TestFaceTemplate faceTemplate : testFaceTemplate) {
                 String string = faceTemplateUtility.stringFromFaceTemplate(faceTemplate.getFaceTemplate());
+                assertEquals(faceTemplate.getString(), string);
+            }
+        }
+    }
+
+    @Test
+    public void test_encodeFaceTemplateToString_suceeds() {
+        FaceTemplateBase64Coder coder = new FaceTemplateBase64Coder();
+        for (TestFaceTemplate[] testFaceTemplate : testFaceTemplates) {
+            for (TestFaceTemplate faceTemplate : testFaceTemplate) {
+                String string = coder.encodeFaceTemplate(faceTemplate.getFaceTemplate());
                 assertEquals(faceTemplate.getString(), string);
             }
         }
@@ -51,7 +74,7 @@ public class FaceTemplateUtilityTest {
 
     @Test
     public void test_convertFaceTemplateToStringWithSpecifiedBase64Coder_succeeds() {
-        FaceTemplateUtility faceTemplateUtility = FaceTemplateUtility.withBase64(FaceTemplateUtility.DEFAULT_BASE_64);
+        FaceTemplateUtility<float[]> faceTemplateUtility = FaceTemplateUtility.withBase64(FaceTemplateUtility.DEFAULT_BASE_64);
         for (TestFaceTemplate[] testFaceTemplate : testFaceTemplates) {
             for (TestFaceTemplate faceTemplate : testFaceTemplate) {
                 String string = faceTemplateUtility.stringFromFaceTemplate(faceTemplate.getFaceTemplate());
@@ -61,8 +84,19 @@ public class FaceTemplateUtilityTest {
     }
 
     @Test
+    public void test_convertFaceTemplateToStringWithSpecifiedStringCoder_succeeds() {
+        FaceTemplateUtility<String> faceTemplateUtility = FaceTemplateUtility.withCoder(new FaceTemplateBase64Coder());
+        for (TestFaceTemplate[] testFaceTemplate : testFaceTemplates) {
+            for (TestFaceTemplate faceTemplate : testFaceTemplate) {
+                String string = faceTemplateUtility.getFaceTemplateCoder().encodeFaceTemplate(faceTemplate.getFaceTemplate());
+                assertEquals(faceTemplate.getString(), string);
+            }
+        }
+    }
+
+    @Test
     public void test_compareSameUser_returnsHighScore() {
-        FaceTemplateUtility faceTemplateUtility = FaceTemplateUtility.defaultInstance();
+        FaceTemplateUtility<float[]> faceTemplateUtility = FaceTemplateUtility.defaultInstance();
         for (TestFaceTemplate[] testFaceTemplate : testFaceTemplates) {
             for (int i=0; i<testFaceTemplate.length-1; i++) {
                 float score = faceTemplateUtility.compareFaceTemplates(testFaceTemplate[i].getFaceTemplate(), testFaceTemplate[i+1].getFaceTemplate());
@@ -73,7 +107,7 @@ public class FaceTemplateUtilityTest {
 
     @Test
     public void test_compareStringTemplatesOfSameUser_returnsHighScore() {
-        FaceTemplateUtility faceTemplateUtility = FaceTemplateUtility.defaultInstance();
+        FaceTemplateUtility<String> faceTemplateUtility = FaceTemplateUtility.withCoder(new FaceTemplateBase64Coder());
         for (TestFaceTemplate[] testFaceTemplate : testFaceTemplates) {
             for (int i=0; i<testFaceTemplate.length-1; i++) {
                 float score = faceTemplateUtility.compareFaceTemplates(testFaceTemplate[i].getString(), testFaceTemplate[i+1].getString());
@@ -84,7 +118,7 @@ public class FaceTemplateUtilityTest {
 
     @Test
     public void test_compareDifferentUsers_returnsLowScore() {
-        FaceTemplateUtility faceTemplateUtility = FaceTemplateUtility.defaultInstance();
+        FaceTemplateUtility<float[]> faceTemplateUtility = FaceTemplateUtility.defaultInstance();
         for (int i=0; i<testFaceTemplates.length-1; i++) {
             TestFaceTemplate[] user1Templates = testFaceTemplates[i];
             TestFaceTemplate[] user2Templates = testFaceTemplates[i+1];
@@ -99,7 +133,7 @@ public class FaceTemplateUtilityTest {
 
     @Test
     public void test_getTemplateNorms_equalsOne() {
-        FaceTemplateUtility faceTemplateUtility = FaceTemplateUtility.defaultInstance();
+        FaceTemplateUtility<float[]> faceTemplateUtility = FaceTemplateUtility.defaultInstance();
         for (TestFaceTemplate[] testFaceTemplate : testFaceTemplates) {
             for (TestFaceTemplate faceTemplate : testFaceTemplate) {
                 float norm = faceTemplateUtility.getFaceTemplateNorm(faceTemplate.getFaceTemplate());
@@ -117,7 +151,7 @@ public class FaceTemplateUtilityTest {
 
     @Test
     public void test_compareSameUserWithUnitNorms_returnsHighScore() {
-        FaceTemplateUtility faceTemplateUtility = FaceTemplateUtility.withUnitNorm();
+        FaceTemplateUtility<float[]> faceTemplateUtility = FaceTemplateUtility.withUnitNorm();
         for (TestFaceTemplate[] testFaceTemplate : testFaceTemplates) {
             for (int i=0; i<testFaceTemplate.length-1; i++) {
                 float score = faceTemplateUtility.compareFaceTemplates(testFaceTemplate[i].getFaceTemplate(), testFaceTemplate[i+1].getFaceTemplate());
@@ -128,13 +162,19 @@ public class FaceTemplateUtilityTest {
 
     @Test
     public void test_compareSameUserWithSpecifiedStandardDeviation_returnsHighScore() {
-        FaceTemplateUtility faceTemplateUtility = FaceTemplateUtility.withStandardDeviation(FaceTemplateUtility.DEFAULT_STANDARD_DEVIATION);
+        FaceTemplateUtility<float[]> faceTemplateUtility = FaceTemplateUtility.defaultInstance().setStandardDeviation(FaceTemplateUtility.DEFAULT_STANDARD_DEVIATION);
         for (TestFaceTemplate[] testFaceTemplate : testFaceTemplates) {
             for (int i=0; i<testFaceTemplate.length-1; i++) {
                 float score = faceTemplateUtility.compareFaceTemplates(testFaceTemplate[i].getFaceTemplate(), testFaceTemplate[i+1].getFaceTemplate());
                 assertTrue(score > similarityThreshold);
             }
         }
+    }
+
+    @Test
+    public void test_createFaceTemplateUtilityWithStandardDeviation_succeeds() {
+        float value = 2.0f;
+        assertEquals(value, FaceTemplateUtility.withStandardDeviation(value).getStandardDeviation(), 0.0001f);
     }
 
     @Test
@@ -166,5 +206,16 @@ public class FaceTemplateUtilityTest {
     public void test_setNullBase64_usesDefault() {
         final byte[] testData = new byte[]{0,1,2,3};
         assertEquals(FaceTemplateUtility.defaultInstance().setBase64(null).getBase64().encode(testData), FaceTemplateUtility.DEFAULT_BASE_64.encode(testData));
+    }
+
+    @Test
+    public void test_convertToFaceTemplate_succeeds() {
+        FaceTemplateUtility<String> faceTemplateUtility = FaceTemplateUtility.withCoder(new FaceTemplateBase64Coder());
+        for (TestFaceTemplate[] faceTemplates : testFaceTemplates) {
+            for (TestFaceTemplate testFaceTemplate : faceTemplates) {
+                float[] converted = faceTemplateUtility.getFaceTemplateCoder().decodeFaceTemplate(testFaceTemplate.getString());
+                assertArrayEquals(testFaceTemplate.getFaceTemplate(), converted, 0.001f);
+            }
+        }
     }
 }

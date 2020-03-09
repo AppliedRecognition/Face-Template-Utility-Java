@@ -11,8 +11,12 @@ import java.nio.charset.Charset;
  * @since 1.0.0
  */
 @SuppressWarnings("WeakerAccess")
-public class FaceTemplateUtility {
+public abstract class FaceTemplateUtility<T> {
 
+    /**
+     * @deprecated 2.1.0 Using {@link FaceTemplateBase64Coder}
+     */
+    @Deprecated
     public static final IBase64 DEFAULT_BASE_64 = new IBase64() {
         @Override
         public byte[] decode(String string) {
@@ -25,22 +29,26 @@ public class FaceTemplateUtility {
             return new String(Base64.encodeBase64(bytes), Charset.forName("UTF-8"));
         }
     };
+
+    /**
+     * Default standard deviation value
+     * @since 2.0.0
+     */
     public static final float DEFAULT_STANDARD_DEVIATION = 0.1786f;
+
+    /**
+     * Get face template coder for encoding and decoding face templates
+     * @return Face template coder
+     * @since 2.1.0
+     */
+    public abstract FaceTemplateCoder<T> getFaceTemplateCoder();
+
     private Float norm = null;
     private float standardDeviation = DEFAULT_STANDARD_DEVIATION;
+    @Deprecated
     private IBase64 base64 = DEFAULT_BASE_64;
 
     private FaceTemplateUtility() {
-    }
-
-    private FaceTemplateUtility(Float norm, Float standardDeviation, IBase64 base64) {
-        this.norm = norm;
-        if (standardDeviation != null) {
-            this.standardDeviation = standardDeviation;
-        }
-        if (base64 != null) {
-            this.base64 = base64;
-        }
     }
 
     //region Factory methods
@@ -50,8 +58,24 @@ public class FaceTemplateUtility {
      * @return Instance of FaceTemplateUtility
      * @since 2.0.0
      */
-    public static FaceTemplateUtility defaultInstance() {
-        return new FaceTemplateUtility();
+    public static FaceTemplateUtility<float[]> defaultInstance() {
+        return new FaceTemplateUtility<float[]>() {
+
+            @Override
+            public FaceTemplateCoder<float[]> getFaceTemplateCoder() {
+                return new FaceTemplateCoder<float[]>() {
+                    @Override
+                    public float[] encodeFaceTemplate(float[] faceTemplate) {
+                        return faceTemplate;
+                    }
+
+                    @Override
+                    public float[] decodeFaceTemplate(float[] encodedFaceTemplate) {
+                        return encodedFaceTemplate;
+                    }
+                };
+            }
+        };
     }
 
     /**
@@ -59,8 +83,10 @@ public class FaceTemplateUtility {
      * @return Instance of FaceTemplateUtility
      * @since 2.0.0
      */
-    public static FaceTemplateUtility withUnitNorm() {
-        return new FaceTemplateUtility(1f, null, null);
+    public static FaceTemplateUtility<float[]> withUnitNorm() {
+        FaceTemplateUtility<float[]> instance = FaceTemplateUtility.defaultInstance();
+        instance.norm = 1f;
+        return instance;
     }
 
     /**
@@ -69,8 +95,9 @@ public class FaceTemplateUtility {
      * @return Instance of FaceTemplateUtility
      * @since 2.0.0
      */
-    public static FaceTemplateUtility withStandardDeviation(float standardDeviation) {
-        return new FaceTemplateUtility(null, standardDeviation, null);
+    public static FaceTemplateUtility<float[]> withStandardDeviation(float standardDeviation) {
+        FaceTemplateUtility<float[]> instance = FaceTemplateUtility.defaultInstance();
+        return instance.setStandardDeviation(standardDeviation);
     }
 
     /**
@@ -78,9 +105,28 @@ public class FaceTemplateUtility {
      * @param base64 Base 64 coder to use when converting face templates to strings
      * @return Instance of FaceTemplateUtility
      * @since 2.0.0
+     * @deprecated 2.1.0 Use {@link #withCoder(FaceTemplateCoder)}
      */
-    public static FaceTemplateUtility withBase64(IBase64 base64) {
-        return new FaceTemplateUtility(null, null, base64);
+    @Deprecated
+    public static FaceTemplateUtility<float[]> withBase64(IBase64 base64) {
+        FaceTemplateUtility<float[]> instance = FaceTemplateUtility.defaultInstance();
+        return instance.setBase64(base64);
+    }
+
+    /**
+     * Construct an instance of FaceTemplateUtility with the given coder
+     * @param coder Encodes and decodes face templates
+     * @param <T> Type of value handled by the coder
+     * @return Instance of FaceTemplateUtility
+     * @since 2.1.0
+     */
+    public static <T> FaceTemplateUtility<T> withCoder(final FaceTemplateCoder<T> coder) {
+        return new FaceTemplateUtility<T>() {
+            @Override
+            public FaceTemplateCoder<T> getFaceTemplateCoder() {
+                return coder;
+            }
+        };
     }
 
     //endregion
@@ -93,7 +139,7 @@ public class FaceTemplateUtility {
      * @return Instance of FaceTemplateUtility
      * @since 2.0.0
      */
-    public FaceTemplateUtility setStandardDeviation(float standardDeviation) {
+    public FaceTemplateUtility<T> setStandardDeviation(float standardDeviation) {
         this.standardDeviation = standardDeviation;
         return this;
     }
@@ -112,8 +158,10 @@ public class FaceTemplateUtility {
      * @param base64 Base 64 coder
      * @return Instance of FaceTemplateUtility
      * @since 2.0.0
+     * @deprecated 2.1.0 Use {@link #getFaceTemplateCoder()}
      */
-    public FaceTemplateUtility setBase64(IBase64 base64) {
+    @Deprecated
+    public FaceTemplateUtility<T> setBase64(IBase64 base64) {
         if (base64 != null) {
             this.base64 = base64;
         } else {
@@ -126,7 +174,9 @@ public class FaceTemplateUtility {
      * Get the base 64 coder to use when converting face templates to strings
      * @return Base 64 coder
      * @since 2.0.0
+     * @deprecated 2.1.0 Use {@link #getFaceTemplateCoder()}
      */
+    @Deprecated
     public IBase64 getBase64() {
         return base64;
     }
@@ -142,31 +192,19 @@ public class FaceTemplateUtility {
      * @return Comparison score
      * @since 2.0.0
      */
-    public float compareFaceTemplates(String template1, String template2) {
-        return compareFaceTemplates(faceTemplateFromString(template1), faceTemplateFromString(template2));
-    }
-
-    /**
-     * Compare two face templates
-     * @param template1 First face template
-     * @param template2 Second face template
-     * @return Comparison score
-     * @since 2.0.0
-     */
-    public float compareFaceTemplates(float[] template1, float[] template2) {
+    public float compareFaceTemplates(T template1, T template2) {
         float norm1;
         float norm2;
+        float[] t1 = getFaceTemplateCoder().decodeFaceTemplate(template1);
+        float[] t2 = getFaceTemplateCoder().decodeFaceTemplate(template2);
         if (this.norm != null) {
             norm1 = this.norm;
-        } else {
-            norm1 = this.getFaceTemplateNorm(template1);
-        }
-        if (this.norm != null) {
             norm2 = this.norm;
         } else {
-            norm2 = this.getFaceTemplateNorm(template2);
+            norm1 = this.getRawFaceTemplateNorm(t1);
+            norm2 = this.getRawFaceTemplateNorm(t2);
         }
-        return innerProduct(template1, template2) / (norm1 * norm2) / standardDeviation;
+        return innerProduct(t1, t2) / (norm1 * norm2) / standardDeviation;
     }
 
     /**
@@ -175,8 +213,8 @@ public class FaceTemplateUtility {
      * @return Norm
      * @since 2.0.0
      */
-    public float getFaceTemplateNorm(float[] template) {
-        return (float)Math.sqrt(innerProduct(template, template));
+    public float getFaceTemplateNorm(T template) {
+        return getRawFaceTemplateNorm(getFaceTemplateCoder().decodeFaceTemplate(template));
     }
 
     private float innerProduct(float[] template1, float[] template2) {
@@ -185,6 +223,10 @@ public class FaceTemplateUtility {
             sum += template1[i] * template2[i];
         }
         return sum;
+    }
+
+    private float getRawFaceTemplateNorm(float[] template) {
+        return (float)Math.sqrt(innerProduct(template, template));
     }
 
     //endregion
@@ -196,10 +238,13 @@ public class FaceTemplateUtility {
      * @param faceTemplate Face template to be converted
      * @return String representation of the face template
      * @since 2.0.0
+     * @deprecated 2.1.0 Use {@link #getFaceTemplateCoder()}
      */
-    public String stringFromFaceTemplate(float[] faceTemplate) {
-        FloatBuffer floatBuffer = FloatBuffer.wrap(faceTemplate);
-        byte[] bytes = new byte[faceTemplate.length * 4];
+    @Deprecated
+    public String stringFromFaceTemplate(T faceTemplate) {
+        float[] template = getFaceTemplateCoder().decodeFaceTemplate(faceTemplate);
+        FloatBuffer floatBuffer = FloatBuffer.wrap(template);
+        byte[] bytes = new byte[template.length * 4];
         ByteBuffer.wrap(bytes).asFloatBuffer().put(floatBuffer);
         return base64.encode(bytes);
     }
@@ -209,13 +254,15 @@ public class FaceTemplateUtility {
      * @param string String representing base 64 encoded face template
      * @return Face template
      * @since 2.0.0
+     * @deprecated 2.1.0 Use {@link #getFaceTemplateCoder()}
      */
-    public float[] faceTemplateFromString(String string) {
+    @Deprecated
+    public T faceTemplateFromString(String string) {
         byte[] bytes = base64.decode(string);
         FloatBuffer floatBuffer = ByteBuffer.wrap(bytes).asFloatBuffer();
         float[] faceTemplate = new float[floatBuffer.limit()];
         floatBuffer.get(faceTemplate);
-        return faceTemplate;
+        return getFaceTemplateCoder().encodeFaceTemplate(faceTemplate);
     }
 
     //endregion

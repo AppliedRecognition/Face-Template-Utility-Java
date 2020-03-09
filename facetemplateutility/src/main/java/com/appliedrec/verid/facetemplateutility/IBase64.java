@@ -3,7 +3,9 @@ package com.appliedrec.verid.facetemplateutility;
 /**
  * Abstraction of base 64 encoding and decoding
  * @since 2.0.0
+ * @deprecated 2.1.0 Use {@link FaceTemplateBase64Coder}
  */
+@Deprecated
 public interface IBase64 {
 
     /**

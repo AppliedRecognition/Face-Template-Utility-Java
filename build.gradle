@@ -26,7 +26,7 @@ allprojects {
 
 ext {
     versionMajor = 2
-    versionMinor = 0
+    versionMinor = 1
     versionPatch = 0
     versionClassifier = null
     versionClassifierVersion = ""
